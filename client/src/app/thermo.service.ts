@@ -1,58 +1,84 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs/Observable';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import 'rxjs/add/operator/do';
+import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/switchMap';
+
+import 'rxjs/add/observable/throw';
+
+export interface Device {
+  serial: string;
+  kind: string;
+  readAccess: boolean;
+  writeAccess: boolean;
+}
+
+function getGuids() {
+  const client_guid = localStorage.getItem('client_guid');
+  const server_guid = localStorage.getItem('server_guid');
+  return { client_guid, server_guid };
+}
+
+
+function hasOldSession() {
+  const { server_guid } = getGuids();
+  return !!server_guid;
+}
 
 @Injectable()
 export class ThermoService {
-  url = 'http://thermadatawifi.trafficmanager.net/externalapp/asmx';
+  url = 'http://127.0.0.1:5000';
+  devices$ = new BehaviorSubject<Device[]>([]);
 
   constructor(private httpClient: HttpClient) { }
 
   createConnection(guid: string) {
-    const method = 'CreateNewConnection';
-    const data = {connectionID: guid};
-    const body = microSoap(method, data);
-    return this._post(body);
+    const payload = { client_guid: guid };
+    const action = 'create_connection';
+    return this._post(action, payload)
+      ._do(res => {
+        console.log(res);
+        const res_payload = res['payload'];
+        localStorage.setItem('client_guid', res_payload['client_guid']);
+        localStorage.setItem('server_guid', res_payload['server_guid']);
+      });
   }
 
-  _post(body: string) {
-    const headers = new HttpHeaders({'Content-Type': 'application/soap+xml'});
-    const responseType = 'text';
-    return this.httpClient.post(this.url, body, {headers, responseType});
+  initialize() {
+    if (hasOldSession()) {
+      this.listDevices().subscribe();
+    }
   }
-}
 
-interface SoapData {
-  [key: string]: string;
-}
+  listDevices() {
+    const payload = getGuids();
+    const action = 'list_devices';
+    return this._post(action, payload)
+      ._do(devices => this.devices$.next(devices as Device[]));
+  }
 
-const soapify = (body: string) => `
-<?xml version="1.0" encoding="utf-8"?>
-<soap12:Envelope
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  <soap12:Body>
-    ${body}
-  </soap12:Body>
-</soap12:Envelope>
-`;
+  readAccess(serial: string, read_key: string) {
+    const payload = { ...getGuids(), serial, read_key };
+    const action = 'read_access';
+    return this._post(action, payload)
+      .switchMap(() => this.listDevices())
+      .map(() => true);
+  }
 
-const makeBody = (method: string, data: string) => `
-    <${method} xmlns="http://www.eti.co.uk/Protocols/ProtocolTestSupport/V1">
-      ${data}
-    </${method}>
-    `;
-const dataify = (key: string, payload: string) => `<${key}>${payload}</${key}>`;
-
-const makeData = (data: SoapData): string => Object.keys(data)
-  .reduce((ac, key) => `
-    ${ac}
-    ${dataify(key, data[key])}
-  `, '');
-
-function microSoap(method: string, data: SoapData): string {
-  const soapifiedData = makeData(data);
-  const body = makeBody(method, soapifiedData);
-  return soapify(body);
+  _post(action: string, payload: object) {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.httpClient
+      .post(this.url, { action, payload }, { headers })
+      .map(res => {
+        if (res['action'] === 'ok') {
+          return res['payload'];
+        } else {
+          Observable.throw(res);
+        }
+      });
+  }
 }

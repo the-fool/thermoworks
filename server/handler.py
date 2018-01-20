@@ -4,8 +4,9 @@ import hashlib
 import base64
 import uuid
 from datetime import datetime
-from bitstring import BitArray
+from .bitstring import BitArray
 import xml.etree.ElementTree as ET
+
 url = 'http://thermadatawifi.trafficmanager.net/externalapp.asmx'
 headers = {'content-type': 'application/soap+xml'}
 
@@ -30,6 +31,8 @@ def lambda_handler(event, context):
                 client_guid, server_guid, serial, read_key)
         elif action == 'get_packets':
             res = do_get_packets(client_guid, server_guid)
+        elif action == 'get_cache':
+            res = do_get_cache(client_guid, server_guid, serial)
         return res
     except Exception as e:
         return {'action': 'error', 'payload': str(e)}
@@ -79,62 +82,80 @@ def do_get_read_access(client_guid, server_guid, serial, read_key):
 
     return {'action': 'ok', 'payload': bool(resp.text)}
 
-def get_sensor_readings(envelope_node):
-  sensor_1_tag = 'XmlSerializiseSensor1LastReading'
-  sensor_2_tag = 'XmlSerializiseSensor2LastReading'
 
-  def get_sensor_reading(tag):
-    reading = find_data_point(tag)
-    bs = base64.b64decode(reading.text)
-    temperature = bs[:3]
-    time_stamp = bs[3:]
-    value = get_value(temperature)
-    units = get_units(temperature)
+def get_sensor_readings(envelope_node):
+    sensor_1_tag = 'XmlSerializiseSensor1LastReading'
+    sensor_2_tag = 'XmlSerializiseSensor2LastReading'
+
+    def get_sensor_reading(tag):
+        reading = find_data_point(tag)
+        bs = base64.b64decode(reading.text)
+        temperature = bs[:3]
+        time_stamp = bs[3:]
+        value = get_value(temperature)
+        units = get_units(temperature)
+        time_stamp = get_datetime_from_saved_reading(time_stamp)
+        return {'units': units, 'value': value, 'ts': time_stamp}
+
+    sensor_1 = get_sensor_reading(sensor_1_tag)
+    sensor_2 = get_sensor_reading(sensor_2_tag)
+
+    return {'sensor_1': sensor_1, 'sensor_2': sensor_2}
+
 
 def get_datetime_from_saved_reading(bs):
-  """
-  input: 4 bytes from saved reading
-  """
-  little_e = bs[::-1]
-  bits = BitArray(little_e)
+    """
+    input: 4 bytes from saved reading
+    """
+    little_e = bs[::-1]
+    bits = BitArray(little_e)
 
-  hour = bits[0:5].uint
-  minute = bits[5:11].uint
-  second = bits[11:17].uint
-  year = bits[17:23].uint + 2015
-  month = bits[23:27].uint
-  day = bits[27:32].uint
+    hour = bits[0:5].uint
+    minute = bits[5:11].uint
+    second = bits[11:17].uint
+    year = bits[17:23].uint + 2015
+    month = bits[23:27].uint
+    day = bits[27:32].uint
 
-  return datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-
+    return datetime(
+        year=year,
+        month=month,
+        day=day,
+        hour=hour,
+        minute=minute,
+        second=second).timestamp()
 
 
 def parse_packets(packets):
     print(list(packets))
 
-def get_units(temp_bytes):
-  """
-  Takes in a 3-byte TU
 
-  returns (sensor_index, 'c' | 'f')
-  """
-  unit_code = temp_bytes[2] >> 4
-  if unit_code == 1:
-    return (1, 'c')
-  elif unit_code == 2:
-    return (1, 'f')
-  elif unit_code == 9:
-    return (2, 'c')
-  elif unit_code == 10:
-    return (2, 'f')
-  else:
-    return (None, 'x')
+def get_units(temp_bytes):
+    """
+    Takes in a 3-byte TU
+
+    returns (sensor_index, 'c' | 'f')
+    """
+    unit_code = temp_bytes[2] >> 4
+    if unit_code == 1:
+        return (1, 'c')
+    elif unit_code == 2:
+        return (1, 'f')
+    elif unit_code == 9:
+        return (2, 'c')
+    elif unit_code == 10:
+        return (2, 'f')
+    else:
+        return (None, 'x')
+
 
 def get_value(temp_bytes):
-  mask = 0b0001111
-  masked = temp_bytes[:2] + (temp_bytes[2] & mask).to_bytes(1, byteorder='little')
-  altered_value = int.from_bytes(masked, byteorder='little')
-  return (altered_value / 300) - 400
+    mask = 0b0001111
+    masked = temp_bytes[:2] + \
+        (temp_bytes[2] & mask).to_bytes(1, byteorder='little')
+    altered_value = int.from_bytes(masked, byteorder='little')
+    return (altered_value / 300) - 400
+
 
 def call_server(
         client_guid,
@@ -175,13 +196,14 @@ def do_get_packets(client_guid, server_guid):
 
 
 def do_get_cache(client_guid, server_guid, serial):
-    return call_server(
+    res_body = call_server(
         method='GetCachedInstrumentInfo',
         client_guid=client_guid,
         server_guid=server_guid,
         data=[('serialNumber', serial)],
         authenticate_tag_name='authenticate'
     )
+    return get_sensor_readings(res_body[0][0])
 
 
 def post(body):
@@ -205,14 +227,18 @@ def get_body(xml_node):
 
 
 data_point_ns = 'http://www.eti.co.uk/Protocols/ProtocolTestSupport/V1'
+
+
 def nsify(tag_name):
-  return '{{{0}}}{1}'.format(data_point_ns, tag_name)
+    return '{{{0}}}{1}'.format(data_point_ns, tag_name)
+
 
 def get_sub_body(body, tag):
     return body.iter(nsify(tag))
 
+
 def find_data_point(parent_node, tag):
-  return parent_node.find(nsify(tag))
+    return parent_node.find(nsify(tag))
 
 
 def strip_ns(tag_name):

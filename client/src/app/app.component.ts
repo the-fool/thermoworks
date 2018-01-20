@@ -17,6 +17,10 @@ export class AppComponent implements OnInit {
 
   }
   ngOnInit() {
+    this.thermoSvc.initialize();
+    this.thermoSvc.devices$.subscribe(ds => {
+      console.log('devices', ds);
+    });
   }
 
   createConnection() {

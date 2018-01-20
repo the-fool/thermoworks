@@ -44,3 +44,5 @@ Thumbs.db
 client/node_modules
 server/*
 !server/*.py
+.mypy_cache
+__pycache__
