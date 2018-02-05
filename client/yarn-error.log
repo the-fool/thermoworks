@@ -1,5 +1,5 @@
 Arguments: 
-  /usr/local/bin/node /home/thomas/.yarn/bin/yarn.js add @ngrx/store
+  /usr/local/bin/node /home/thomas/.yarn/bin/yarn.js add ngrx-store-localstorage
 
 PATH: 
   /home/thomas/.yarn/bin:/home/thomas/gocode/bin:/home/thomas/bin:/home/thomas/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/thomas/anaconda3/bin
@@ -38,6 +38,8 @@ npm manifest:
       "@angular/platform-browser": "^5.1.0",
       "@angular/platform-browser-dynamic": "^5.1.0",
       "@angular/router": "^5.1.0",
+      "@ngrx/effects": "^4.1.1",
+      "@ngrx/store": "^4.1.1",
       "core-js": "^2.4.1",
       "jquery.soap": "^1.7.2",
       "js-sha512": "^0.7.1",
@@ -230,6 +232,14 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/@angular/router/-/router-5.2.0.tgz#0a43f1c6add592c9cb0b9846fc157fc5b23ee73d"
     dependencies:
       tslib "^1.7.1"
+  
+  "@ngrx/effects@^4.1.1":
+    version "4.1.1"
+    resolved "https://registry.yarnpkg.com/@ngrx/effects/-/effects-4.1.1.tgz#cb758b8527964b258ea41951f59aa144e3ef9fae"
+  
+  "@ngrx/store@^4.1.1":
+    version "4.1.1"
+    resolved "https://registry.yarnpkg.com/@ngrx/store/-/store-4.1.1.tgz#680e34df2775e8852754ed777ffac95bd81b7de0"
   
   "@ngtools/json-schema@1.1.0", "@ngtools/json-schema@^1.1.0":
     version "1.1.0"

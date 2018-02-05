@@ -2,7 +2,6 @@ import {
   Component,
   OnInit
 } from '@angular/core';
-import { ThermoService } from './thermo.service';
 import * as uuid from 'uuid/v4';
 
 @Component({
@@ -13,21 +12,7 @@ import * as uuid from 'uuid/v4';
 export class AppComponent implements OnInit {
   title = 'app';
 
-  constructor(public thermoSvc: ThermoService) {
-
-  }
   ngOnInit() {
-    this.thermoSvc.initialize();
-    this.thermoSvc.devices$.subscribe(ds => {
-      console.log('devices', ds);
-    });
   }
 
-  createConnection() {
-    const guid = uuid();
-    this.thermoSvc
-      .createConnection(guid)
-      .subscribe(x => console.log(x))
-      ;
-  }
 }

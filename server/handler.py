@@ -21,6 +21,7 @@ def lambda_handler(event, context):
     try:
         res = None
         if action == 'create_connection':
+            client_guid = str(uuid.uuid4())
             res = do_create_connection(client_guid)
         elif action == 'list_devices':
             res = do_list_devices(client_guid, server_guid)
