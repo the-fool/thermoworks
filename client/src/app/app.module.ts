@@ -3,9 +3,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
-
+import { CoreModule } from './core/core.module';
 import { AppComponent } from './app.component';
-import { ThermoService } from './services/thermo.service';
 
 @NgModule({
   declarations: [
@@ -14,9 +13,9 @@ import { ThermoService } from './services/thermo.service';
   imports: [
     BrowserModule,
     CommonModule,
-    HttpClientModule
+    HttpClientModule,
+    CoreModule
   ],
-  providers: [ ThermoService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

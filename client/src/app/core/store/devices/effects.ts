@@ -4,7 +4,7 @@ import { Effect, Actions } from '@ngrx/effects';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
 import * as acts from './actions';
-import { ThermoService } from 'app/services/thermo.service';
+import { ThermoService } from 'app/core/services/thermo.service';
 import { AddReadAccess } from './actions';
 
 @Injectable()
