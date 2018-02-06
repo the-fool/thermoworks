@@ -21,6 +21,7 @@ def lambda_handler(event, context):
     try:
         res = None
         if action == 'create_connection':
+            # create a random client GUID
             client_guid = str(uuid.uuid4())
             res = do_create_connection(client_guid)
         elif action == 'list_devices':

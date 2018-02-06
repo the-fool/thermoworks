@@ -1,9 +1,11 @@
 export interface Model {
+  loading: boolean;
   clientGuid: string;
   serverGuid: string;
 }
 
 export const init: Model = {
+  loading: false,
   clientGuid: '',
   serverGuid: ''
 };

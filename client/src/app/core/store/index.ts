@@ -9,20 +9,23 @@ import { localStorageSync } from 'ngrx-store-localstorage';
 
 import { DeviceEffects } from './devices/effects';
 
+import * as fromDevices from './devices/reducer';
+import * as fromSession from './session/reducer';
 
 export const effects = [
   DeviceEffects
 ];
 
 
-import * as fromDevices from './devices/reducer';
 
 export interface RootState {
+  session: fromSession.Store;
   devices: fromDevices.Store;
 }
 
 export const reducers: ActionReducerMap<RootState> = {
-  devices: fromDevices.reducer
+  devices: fromDevices.reducer,
+  session: fromSession.reducer,
 };
 
 

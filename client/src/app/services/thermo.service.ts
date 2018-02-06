@@ -8,6 +8,11 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/switchMap';
 import 'rxjs/add/observable/throw';
 
+export interface CreateConnectionReturn {
+  clientGuid: string;
+  serverGuid: string;
+}
+
 export interface Device {
   serial: string;
   kind: string;
@@ -28,7 +33,7 @@ export class ThermoService {
 
   constructor(private httpClient: HttpClient) { }
 
-  createConnection() {
+  createConnection(): Observable<CreateConnectionReturn> {
     const payload = {};
     const action = 'create_connection';
     return this._post(action, payload).map(x => ({
