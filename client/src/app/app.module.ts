@@ -1,20 +1,21 @@
-import { BrowserModule } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
-import { NgModule } from '@angular/core';
-
-import { CoreModule } from './core/core.module';
-import { AppComponent } from './app.component';
-
+import { NgModule } from '@angular/core'
+import { BrowserModule } from '@angular/platform-browser'
+import { CommonModule } from '@angular/common'
+import { HttpClientModule } from '@angular/common/http'
+import { RouterModule } from '@angular/router'
+import { CoreModule } from './core/core.module'
+import { AppComponent } from './core/containers/app'
+import { routes } from './routes'
+import { environment } from '../environments/environment'
 @NgModule({
   declarations: [
-    AppComponent
   ],
   imports: [
     BrowserModule,
     CommonModule,
     HttpClientModule,
-    CoreModule
+    RouterModule.forRoot(routes, { useHash: true }),
+    CoreModule.forRoot()
   ],
   bootstrap: [AppComponent]
 })
